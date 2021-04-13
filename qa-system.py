@@ -28,6 +28,7 @@ import en_core_web_sm
 import webbrowser
 import sys
 import spacy
+import re
 from pprint import pprint
 import bs4 as bs  # BeautifulSoup
 import urllib.request
@@ -37,8 +38,11 @@ from spacy import displacy
 #run_file = sys.argv[1]
 #log_output = sys.argv[2]
 
+wiki = "https://en.wikipedia.org/w/index.php?search={}"
+
 #Retrieve webpage text from Wikipedia site the user's answer leads tos
 def scrape_webpage(url):
+    url = url.replace(" ", "%20")
     scraped_textdata = urllib.request.urlopen(url)
     textdata = scraped_textdata.read()
     parsed_textdata = bs.BeautifulSoup(textdata,'lxml')
@@ -48,7 +52,7 @@ def scrape_webpage(url):
     for para in paragraphs:
         formated_text += para.text
     
-    return formated_text
+    return formated_text.encode('utf-8')
 
 def find_ner(input):
     
@@ -115,19 +119,44 @@ while True:
         
         # find any text and labels NER
         text, label = find_ner(ask)
-    
+        scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
+        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        for sentence in sentences:
+            if "was" in sentence:
+                print(sentence)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
             
         
     elif q_type == 'what':
-        print('what')
+        text, label = find_ner(ask)
+        scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
+        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        for sentence in sentences:
+            if "was" in sentence:
+                print(sentence)
+        print(text, label)
+        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
     elif q_type == 'when':
-        print('when')
+        text, label = find_ner(ask)
+        scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
+        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        for sentence in sentences:
+            if "was" in sentence:
+                print(sentence)
+        print(text, label)
+        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
     elif q_type == 'where':
-        print('where')
+        text, label = find_ner(ask)
+        scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
+        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        for sentence in sentences:
+            if "was" in sentence:
+                print(sentence)
+        print(text, label)
+        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
     else:
         print('I can\'t answer that question. Please try another question.')
