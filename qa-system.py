@@ -47,6 +47,7 @@ def scrape_webpage(url):
     scraped_textdata = urllib.request.urlopen(url)
     textdata = scraped_textdata.read()
     parsed_textdata = bs.BeautifulSoup(textdata,'lxml')
+    #paragraphs = parsed_textdata.find_all('p')
     paragraphs = parsed_textdata.find_all('p')
     formated_text = ""
 
@@ -54,6 +55,7 @@ def scrape_webpage(url):
         formated_text += para.text
     
     formated_text = re.sub(r'(\[.*\])', '', formated_text)
+    formated_text = formated_text.replace('\n', '')
     return formated_text.encode('ascii', 'ignore')
     
 def find_ner(input):
