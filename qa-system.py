@@ -91,7 +91,13 @@ def check_q_type(input):
     else:
         return 'Can\'t answer'
 
-
+def gen_ngrams(text, n):
+    text = text.lower()
+    text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
+    tokens = [token for token in text.split(" ") if token != ""]
+    ngrams = zip(*[tokens[i:] for i in range(n)])
+    return [" ".join(ngram) for ngram in ngrams]
+    
 #https://stackoverflow.com/questions/58151963/how-can-i-take-user-input-and-search-it-in-python
 
 #System can only accept questions that fall into these 4 categories:
@@ -133,6 +139,9 @@ while True:
                     if keyword in sentence:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
+        ngram_string = "".join(filtered_sentences)
+        ngrams = gen_ngrams(ngram_string, 3)
+        print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
             
@@ -149,6 +158,9 @@ while True:
                     if keyword in sentence:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
+        ngram_string = "".join(filtered_sentences)
+        ngrams = gen_ngrams(ngram_string, 3)
+        print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
@@ -164,6 +176,9 @@ while True:
                     if keyword in sentence:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
+        ngram_string = "".join(filtered_sentences)
+        ngrams = gen_ngrams(ngram_string, 3)
+        print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
@@ -179,6 +194,9 @@ while True:
                     if keyword in sentence:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
+        ngram_string = "".join(filtered_sentences)
+        ngrams = gen_ngrams(ngram_string, 3)
+        print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
