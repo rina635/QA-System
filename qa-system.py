@@ -54,7 +54,7 @@ def scrape_webpage(url):
         formated_text += para.text
     
     formated_text = re.sub(r'(\[.*\])', '', formated_text)
-    return formated_text.encode('utf-8')
+    return formated_text.encode('ascii', 'ignore')
     
 def find_ner(input):
     
