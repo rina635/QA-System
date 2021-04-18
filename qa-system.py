@@ -33,6 +33,7 @@ from pprint import pprint
 import bs4 as bs  # BeautifulSoup
 import urllib.request
 from spacy import displacy
+from nltk.tokenize import sent_tokenize, word_tokenize, RegexpTokenizer
 
 #Command line arguments to run file and store user's questions into log file.
 #run_file = sys.argv[1]
@@ -52,8 +53,9 @@ def scrape_webpage(url):
     for para in paragraphs:
         formated_text += para.text
     
+    formated_text = re.sub(r'(\[.*\])', '', formated_text)
     return formated_text.encode('utf-8')
-
+    
 def find_ner(input):
     
     named_text = ''
@@ -120,10 +122,15 @@ while True:
         # find any text and labels NER
         text, label = find_ner(ask)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
-        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        sentences = sent_tokenize(scraped_data)
+        keywords = ["was", "is"]
+        filtered_sentences = []
         for sentence in sentences:
-            if "was" in sentence:
-                print(sentence)
+            if text in sentence:
+                for keyword in keywords:
+                    if keyword in sentence:
+                        filtered_sentences.append(sentence)
+        print(filtered_sentences)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
             
@@ -131,30 +138,45 @@ while True:
     elif q_type == 'what':
         text, label = find_ner(ask)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
-        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        sentences = sent_tokenize(scraped_data)
+        keywords = ["was", "is"]
+        filtered_sentences = []
         for sentence in sentences:
-            if "was" in sentence:
-                print(sentence)
+            if text in sentence:
+                for keyword in keywords:
+                    if keyword in sentence:
+                        filtered_sentences.append(sentence)
+        print(filtered_sentences)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
     elif q_type == 'when':
         text, label = find_ner(ask)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
-        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        sentences = sent_tokenize(scraped_data)
+        keywords = ["was", "is", "from"]
+        filtered_sentences = []
         for sentence in sentences:
-            if "was" in sentence:
-                print(sentence)
+            if text in sentence:
+                for keyword in keywords:
+                    if keyword in sentence:
+                        filtered_sentences.append(sentence)
+        print(filtered_sentences)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
     elif q_type == 'where':
         text, label = find_ner(ask)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
-        sentences = re.findall(r"([^.]*?%s[^.]*\.)" % text, scraped_data)
+        sentences = sent_tokenize(scraped_data)
+        keywords = ["was", "is", "near"]
+        filtered_sentences = []
         for sentence in sentences:
-            if "was" in sentence:
-                print(sentence)
+            if text in sentence:
+                for keyword in keywords:
+                    if keyword in sentence:
+                        filtered_sentences.append(sentence)
+        print(filtered_sentences)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         
