@@ -17,14 +17,32 @@ Libraries used: en_core_web_sm, webbrowser, sys, spacy, pprint, bs4,  urllib.req
 Additional features (for extra credit):   
 Usage Instructions:     
 Algorithm defined in program:
-    
+a- Get the question from the user 
+b- Check if the question is valid or not. Valid question starts with (who, what, when, or where) and more than three words
+c- The log file is created 
+d- For each question type:
+    1- The keywords of the question are defined after removing the stopwords.
+    2- The keywords are used to rewrite the query for searching.
+    3- The sentences with keywords and NER tags sapecfied for the question type
+        is used to filter the sentence of the returning Wikipedia page 
+    4- 3-gram is generated from the filtered sentences.
+    5- The n-gram is scored based on criteria givin for each question type. 
+    6- The scored n-grams are sorted to be used for n-gram tiling.
+    7- The full answer will be returned based on the tiling result. 
+e- Unanswered question should be determnined based on the score. If the highest score is 1 means the answer cannot be found. 
+f- If the question couldn't be answered, the system will return "I can\'t answer that question. Please try another question."
+g- if the user typed "exit", the program will terminaten and the log file will close and show the questions and the answers.     
+        
+
 Resources used for this assignment come from the materials provided in the AIT 590 course materials.
 - Lecture powerpoints (AIT 590)
 - Stanford University Prof. Dan Jurafsky's Video Lectures (https://www.youtube.com/watch?v=zQ6gzQ5YZ8o)
 - Joe James Python: NLTK video series (https://www.youtube.com/watch?v=RYgqWufzbA8)
 - w3schools Python Reference (https://www.w3schools.com/python/)
 - regular expressions 101 (https://regex101.com/)
+- https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
 """
+
 import en_core_web_sm
 import webbrowser
 import sys
@@ -37,6 +55,7 @@ from spacy import displacy
 import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize, RegexpTokenizer
 from nltk.corpus import stopwords
+import operator
 
 #Command line arguments to run file and store user's questions into log file.
 #run_file = sys.argv[1]
@@ -50,7 +69,6 @@ def scrape_webpage(url):
     scraped_textdata = urllib.request.urlopen(url)
     textdata = scraped_textdata.read()
     parsed_textdata = bs.BeautifulSoup(textdata,'lxml')
-    #paragraphs = parsed_textdata.find_all('p')
     paragraphs = parsed_textdata.find_all('p')
     formated_text = ""
 
@@ -61,7 +79,7 @@ def scrape_webpage(url):
     formated_text = formated_text.replace('\n', '')
     return formated_text.encode('ascii', 'ignore')
 
-#Retrieve NER 
+#Retrieve the entity and its NER 
 def find_ner(input):
     
     named_text = ''
@@ -81,19 +99,15 @@ def find_ner(input):
 
     return named_text, named_label
 
-#Retrieve NER 
+#Retrieve NER for an entity  
 def find_ner2(input):
-    named_label = ''
-    
+    named_label = ''  
     # Load English tokenizer, tagger, parser, NER and word vectors
-    nlp = en_core_web_sm.load()
-  
+    nlp = en_core_web_sm.load()  
     # transform the text to spacy doc format
-    mytext = nlp(input)
-    
+    mytext = nlp(input)   
     for ent in mytext.ents:
-        named_label = ent.label_
-        
+        named_label = ent.label_       
     return named_label
 
 # checks the type of question
@@ -151,6 +165,13 @@ def where_query(input):
         input = r"\2 \1" 
     return input
 
+# Function to convert list to string  
+def listToString(list_element): 
+    # initialize an empty string
+    text= " " 
+    # return string  
+    return (text.join(list_element)) 
+
 #https://stackoverflow.com/questions/58151963/how-can-i-take-user-input-and-search-it-in-python
 
 #System can only accept questions that fall into these 4 categories:
@@ -159,6 +180,62 @@ def where_query(input):
 #create a logging file
 logger = open('log-file.txt','w')
 logger.write('Starting New Log.....')
+
+def has_digit(string):
+    return any(i.isdigit() for i in string)
+#Function return True if a string has capital letter 
+def has_capital(string):
+    return any(i.islower() for i in string)
+
+#Function to give the score of the n-gram in Who question
+def score_who(ngram):
+    score = 0
+    who_tag = ["PERSON"]
+    if has_capital(ngram):
+        score += 1
+    if find_ner2 in who_tag:
+        score += 1
+    return score
+
+#Function to give the score of the n-gram in What question
+def score_what(ngram):
+    score = 0
+    what_tag = ["NORP","PRODUCT","EVENT","WORK_OF_ART","LAW","LANGUAGE","PERCENT","MONEY","QUANTITY","ORDINAL","CARDINAL"]
+    if has_digit(ngram):
+        score += 1
+    if has_capital(ngram):
+        score += 1
+    if find_ner2(ngram) in what_tag:
+        score += 1
+    return score
+
+#Function to give the score of the n-gram in When question
+def score_when(ngram):
+    score = 0
+    when_tag = ["DATE","TIME"]
+    months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
+    if has_digit(ngram):
+        score += 1
+    if has_capital(ngram):
+        score += 1
+    if find_ner2(ngram) in when_tag:
+        score += 1
+    for month in months:
+        if month in ngram:
+            score += 1
+    return score
+
+#Function to give the score of the n-gram in Where question
+def score_where(ngram):
+    score = 0
+    where_tag = ["GPE","ORG","LOC"]
+    if has_digit(ngram):
+        score += 1
+    if has_capital(ngram):
+        score += 1
+    if find_ner2(ngram) in when_tag:
+        score += 1
+    return score
 
 
 # loops until exit
@@ -191,7 +268,6 @@ while True:
         for words in query_words:
             if words in ask:
                 who_query.append(text+ " "+words)
-        print(who_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -206,7 +282,14 @@ while True:
         print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
-            
+        ngram_score = {}
+        for i in ngrams:
+            if i not in ngram_score.keys():
+                ngram_score[i] = score_who(i)
+            else:
+                ngram_score[i] += score_who(i)
+        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(sorted_ngram_score)            
         
     elif q_type == 'what':
         text, label = find_ner(ask)
@@ -216,10 +299,8 @@ while True:
         for words in query_words:
             if words in ask:
                 what_query.append(text+ " "+words)
-        print(what_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
-        #keywords = ["was", "is"]
         filtered_sentences = []
         for sentence in sentences:
             if text in sentence:
@@ -232,16 +313,23 @@ while True:
         print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
-        
+        ngram_score = {}
+        for i in ngrams:
+            if i not in ngram_score.keys():
+                ngram_score[i] = score_what(i)
+            else:
+                ngram_score[i] += score_what(i)
+        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(sorted_ngram_score)
+      
     elif q_type == 'when':
         text, label = find_ner(ask)
         when_tag = ["DATE","TIME"]
-        query_words = ["was","is","born"]
+        query_words = ["was","is"]
         when_query = []
         for words in query_words:
             if words in ask:
                 when_query.append(text+ " "+words)
-        print(when_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -257,13 +345,13 @@ while True:
         print(ngrams)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
-        score = 0
-        for i in  ngrams:
-            if i in when_tag:
-                ngram_score[i] =+ score   
+        for i in ngrams:
+            if i not in ngram_score.keys():
+                ngram_score[i] = score_when(i)
             else:
-                ngram_score[i] = score   
-        print(ngram_score)
+                ngram_score[i] += score_when(i)
+        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(sorted_ngram_score)
         
     elif q_type == 'where':
         text, label = find_ner(ask)
@@ -273,7 +361,6 @@ while True:
         for words in query_words:
             if words in ask:
                 where_query.append(text+ " "+words)
-        print(where_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -288,6 +375,14 @@ while True:
         print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
+        ngram_score = {}
+        for i in ngrams:
+            if i not in ngram_score.keys():
+                ngram_score[i] = score_where(i)
+            else:
+                ngram_score[i] += score_where(i)
+        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(sorted_ngram_score)
         
     else:
         print('I can\'t answer that question. Please try another question.')
@@ -301,18 +396,16 @@ logger.close()
 # In[4]:
 
 
-#Function to reformulate when question
-def when_query(input):
-    if input == r"when (was|were)(.*)":
-        re.sub(r"when (was|were)(.*)", r"\2 \1", input) 
-    return input
-
-test = "when was world war" 
-test2 = when_query(test)
-print(test2)
 
 
-# In[1]:
+
+# In[4]:
+
+
+
+
+
+# In[12]:
 
 
 
