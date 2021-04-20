@@ -13,8 +13,8 @@ Date: 4/21/2021
 Description:
 Types of questions:
     
-Libraries used: 
-Additional features (for extra credit):    
+Libraries used: en_core_web_sm, webbrowser, sys, spacy, pprint, bs4,  urllib.request, nltk, sent_tokenize, word_tokenize, RegexpTokenizer, stopwords
+Additional features (for extra credit):   
 Usage Instructions:     
 Algorithm defined in program:
     
@@ -119,7 +119,7 @@ def check_q_type(question):
 
 #Function to generate n-gram 
 def gen_ngrams(text, n):
-    text = text.lower()
+    #text = text.lower()
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
     tokens = [token for token in text.split(" ") if token != ""]
     ngrams = zip(*[tokens[i:] for i in range(n)])
@@ -128,13 +128,13 @@ def gen_ngrams(text, n):
 #Function to reformulate when question
 def when_query(input):
     if input == r"when (was|were)(.*)":
-        input = r"\2 \1" 
+        re.sub(r"when (was|were)(.*)", r"\2 \1", input) 
     return input
 
 #Function to reformulate where question
 def where_query(input):
     if input == r"where (was|were)(.*)":
-        input = r"\2 \1" 
+        re.sub(r"where (was|were)(.*)", r"\2 \1", input)
     elif input == r"where (was|were)(.*) (discovered|found|created|generated)":
         input = (r"\2 \1 \3", 4)
     return input
@@ -185,13 +185,20 @@ while True:
         
         # find any text and labels NER
         text, label = find_ner(ask)
+        who_tag = ["PERSON"]
+        query_words = ["was","is","are","were"]
+        who_query = []
+        for words in query_words:
+            if words in ask:
+                who_query.append(text+ " "+words)
+        print(who_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
         for sentence in sentences:
             if text in sentence:
                 for keyword in keywords:
-                    if keyword in sentence:
+                    if keyword in sentence  and find_ner2(sentence) in who_tag:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
@@ -204,6 +211,12 @@ while True:
     elif q_type == 'what':
         text, label = find_ner(ask)
         what_tag = ["NORP","PRODUCT","EVENT","WORK_OF_ART","LAW","LANGUAGE","PERCENT","MONEY","QUANTITY","ORDINAL","CARDINAL"]
+        query_words = ["was","is","are","were"]
+        what_query = []
+        for words in query_words:
+            if words in ask:
+                what_query.append(text+ " "+words)
+        print(what_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         #keywords = ["was", "is"]
@@ -211,7 +224,7 @@ while True:
         for sentence in sentences:
             if text in sentence:
                 for keyword in keywords:
-                    if keyword in sentence:
+                    if keyword in sentence  and find_ner2(sentence) in what_tag:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
@@ -223,35 +236,51 @@ while True:
     elif q_type == 'when':
         text, label = find_ner(ask)
         when_tag = ["DATE","TIME"]
+        query_words = ["was","is","born"]
+        when_query = []
+        for words in query_words:
+            if words in ask:
+                when_query.append(text+ " "+words)
+        print(when_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
-        #keywords = ["was", "is", "from"]
-        #keywords = when_query(ask)
         filtered_sentences = []
         for sentence in sentences:
             if text in sentence:
                 for keyword in keywords:
-                    if keyword in sentence and find_ner2(sentence) in when_tag):
+                    if keyword in sentence and find_ner2(sentence) in when_tag:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(ngram_string, 3)
         print (keywords)
         print(ngrams)
-        print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
+        ngram_score = {}
+        score = 0
+        for i in  ngrams:
+            if i in when_tag:
+                ngram_score[i] =+ score   
+            else:
+                ngram_score[i] = score   
+        print(ngram_score)
         
     elif q_type == 'where':
         text, label = find_ner(ask)
         where_tag = ["GPE","ORG","LOC"]
+        query_words = ["was","is","are","were"]
+        where_query = []
+        for words in query_words:
+            if words in ask:
+                where_query.append(text+ " "+words)
+        print(where_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
-        #keywords = ["was", "is", "near"]
         filtered_sentences = []
         for sentence in sentences:
             if text in sentence:
                 for keyword in keywords:
-                    if keyword in sentence and (find_ner2(sentence) == "GPE" or find_ner2(sentence) == "ORG" or find_ner2(sentence) == "LOC"):
+                    if keyword in sentence and find_ner2(sentence) in where_tag:
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
@@ -267,29 +296,23 @@ while True:
 # close the logging file after everything has been written        
 logger.close()
         
-'''
-#Check if its an acceptable question
-if ask[0] in accepted:
-    #Then take question and use POS Tagger/NER to extract the main points its abouut
-    #Process it and then use that as the input for the wikipedia search
-#Use tagger on user input then use that as the variable to search wikipedia for
-elif ask[0] == 'exit':
-    print('Thank you! Goodbye.')
-else:
-    print("I am sorry, I don't know the answer")    
-    
-#Scrapes the text from wikipedia site
-web_text = scrape_webpage(url)
-#Generates webpage's named entities.
-pprint([(X.text, X.label_) for X in url.ents])
-#Will extrace Part-of-speech of sentences from webpage
-#https://spacy.io/usage/spacy-101
-for sentences in web_text:
-    print(sentences.txt, sentences.pos_)
-'''   
 
 
-# In[ ]:
+# In[4]:
+
+
+#Function to reformulate when question
+def when_query(input):
+    if input == r"when (was|were)(.*)":
+        re.sub(r"when (was|were)(.*)", r"\2 \1", input) 
+    return input
+
+test = "when was world war" 
+test2 = when_query(test)
+print(test2)
+
+
+# In[1]:
 
 
 
