@@ -119,7 +119,6 @@ def check_q_type(question):
 
 #Function to generate n-gram 
 def gen_ngrams(text, n):
-    text = text.lower()
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
     tokens = [token for token in text.split(" ") if token != ""]
     ngrams = zip(*[tokens[i:] for i in range(n)])
@@ -136,7 +135,7 @@ def where_query(input):
     if input == r"where (was|were)(.*)":
         input = r"\2 \1" 
     elif input == r"where (was|were)(.*) (discovered|found|created|generated)":
-        input = (r"\2 \1 \3", 4)
+        input = re.sub(r"\2 \1 \3", 4)
     return input
 
 #Function to reformulate what question
@@ -146,10 +145,9 @@ def where_query(input):
     return input
 
 #Function to reformulate who question
-def where_query(input):
-    if input == r"who (is|was|were|can|could|should)(.*)":
-        input = r"\2 \1" 
-    return input
+def who_query(input):
+    input = input.replace('?', '')
+    return re.sub(r'who (is|was|were|can|could|should)(.*)', r'\2 \1', input)
 
 #https://stackoverflow.com/questions/58151963/how-can-i-take-user-input-and-search-it-in-python
 
@@ -198,6 +196,7 @@ while True:
         ngrams = gen_ngrams(ngram_string, 3)
         print(ngrams)
         print(text, label)
+        print(who_query(ask.lower()))
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
             
         
@@ -231,7 +230,7 @@ while True:
         for sentence in sentences:
             if text in sentence:
                 for keyword in keywords:
-                    if keyword in sentence and find_ner2(sentence) in when_tag):
+                    if keyword in sentence and (find_ner2(sentence) in when_tag):
                         filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
