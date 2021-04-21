@@ -235,6 +235,9 @@ def score_where(ngram):
         score += 1
     return score
 
+def contains_substring(substring, string):
+    search = ".*".join(re.escape(char) for char in substring)
+    return bool(re.search(search, string))
 
 # loops until exit
 while True:
@@ -242,7 +245,7 @@ while True:
     ask = input('What would you like to learn today?\n')
     #tokenize the question and removve stopwords and use the remaining as keyword to search and filter
     question_tokens = nltk.word_tokenize(ask)
-    keywords = [token for token in  question_tokens if token not in stopwords.words ('english')]
+    keywords = [token for token in question_tokens if token not in stopwords.words ('english')]
     
     # add to log file
     logger.write('\n' + ask)
@@ -260,7 +263,7 @@ while True:
         
         # find any text and labels NER
         text, label = find_ner(ask)
-        who_tag = ["PERSON"]
+        who_tag = ["PERSON", "NORP"]
         query_words = ["was","is","are","were"]
         who_query = []
         for words in query_words:
@@ -270,16 +273,14 @@ while True:
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
         for sentence in sentences:
-            if text in sentence:
-                for keyword in keywords:
-                    if keyword in sentence  and find_ner2(sentence) in who_tag:
-                        filtered_sentences.append(sentence)
+            for query in who_query:
+                if contains_substring(query, sentence):
+                    filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(ngram_string, 3)
         print(ngrams)
         print(text, label)
-        print(who_query(ask.lower()))
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
@@ -302,10 +303,9 @@ while True:
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
         for sentence in sentences:
-            if text in sentence:
-                for keyword in keywords:
-                    if keyword in sentence  and find_ner2(sentence) in what_tag:
-                        filtered_sentences.append(sentence)
+            for query in what_query:
+                if contains_substring(query, sentence):
+                    filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(ngram_string, 3)
@@ -333,10 +333,9 @@ while True:
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
         for sentence in sentences:
-            if text in sentence:
-                for keyword in keywords:
-                    if keyword in sentence and find_ner2(sentence) in when_tag:
-                        filtered_sentences.append(sentence)
+            for query in when_query:
+                if contains_substring(query, sentence):
+                    filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(ngram_string, 3)
@@ -355,7 +354,7 @@ while True:
     elif q_type == 'where':
         text, label = find_ner(ask)
         where_tag = ["GPE","ORG","LOC"]
-        query_words = ["was","is","are","were"]
+        query_words = ["was","is","are","were", "on", "near", "next"]
         where_query = []
         for words in query_words:
             if words in ask:
@@ -364,10 +363,9 @@ while True:
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
         for sentence in sentences:
-            if text in sentence:
-                for keyword in keywords:
-                    if keyword in sentence and find_ner2(sentence) in where_tag:
-                        filtered_sentences.append(sentence)
+            for query in where_query:
+                if contains_substring(query, sentence):
+                    filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(ngram_string, 3)
