@@ -62,6 +62,7 @@ import operator
 #log_output = sys.argv[2]
 
 wiki = "https://en.wikipedia.org/w/index.php?search={}"
+nlp = en_core_web_sm.load() 
 
 #Retrieve webpage text from Wikipedia site the user's answer leads tos
 def scrape_webpage(url):
@@ -102,8 +103,7 @@ def find_ner(input):
 #Retrieve NER for an entity  
 def find_ner2(input):
     named_label = ''  
-    # Load English tokenizer, tagger, parser, NER and word vectors
-    nlp = en_core_web_sm.load()  
+    # Load English tokenizer, tagger, parser, NER and word vectors 
     # transform the text to spacy doc format
     mytext = nlp(input)   
     for ent in mytext.ents:
@@ -134,7 +134,7 @@ def check_q_type(question):
 #Function to generate n-gram 
 def gen_ngrams(text, n):
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
-    tokens = [token for token in text.split(" ") if token != ""]
+    tokens = [token for token in text.split(" ") if token != "" and not token.islower()]
     ngrams = zip(*[tokens[i:] for i in range(n)])
     return [" ".join(ngram) for ngram in ngrams]
 
@@ -179,19 +179,17 @@ def listToString(list_element):
 logger = open('log-file.txt','w')
 logger.write('Starting New Log.....')
 
-def has_digit(string):
-    return any(i.isdigit() for i in string)
-#Function return True if a string has capital letter 
-def has_capital(string):
-    return any(i.islower() for i in string)
-
 #Function to give the score of the n-gram in Who question
 def score_who(ngram):
     score = 0
     who_tag = ["PERSON"]
-    if has_capital(ngram):
-        score += 1
-    if find_ner2 in who_tag:
+    title = ["president", "ceo", "king", "queen", "prince", "princess"]
+    for word in ngram.split(" "):
+        if word.capitalize():
+            score += 1
+        if word in title:
+            score += 1
+    if find_ner2(ngram) in who_tag:
         score += 1
     return score
 
@@ -199,10 +197,9 @@ def score_who(ngram):
 def score_what(ngram):
     score = 0
     what_tag = ["NORP","PRODUCT","EVENT","WORK_OF_ART","LAW","LANGUAGE","PERCENT","MONEY","QUANTITY","ORDINAL","CARDINAL"]
-    if has_digit(ngram):
-        score += 1
-    if has_capital(ngram):
-        score += 1
+    for word in ngram.split(" "):
+        if word.capitalize():
+            score += 1
     if find_ner2(ngram) in what_tag:
         score += 1
     return score
@@ -211,15 +208,16 @@ def score_what(ngram):
 def score_when(ngram):
     score = 0
     when_tag = ["DATE","TIME"]
-    months = ["January","February","March","April","May","June","July","August","September","October","November","December"]
-    if has_digit(ngram):
-        score += 1
-    if has_capital(ngram):
-        score += 1
+    months = ["january","february","march","april","may","june","july","august","september","october","november","december"]
+    for word in ngram.split(" "):
+        if word.capitalize():
+            score += 1
+        if word.isdigit():
+            score += 1
     if find_ner2(ngram) in when_tag:
         score += 1
     for month in months:
-        if month in ngram:
+        if month in ngram.lower():
             score += 1
     return score
 
@@ -227,17 +225,16 @@ def score_when(ngram):
 def score_where(ngram):
     score = 0
     where_tag = ["GPE","ORG","LOC"]
-    if has_digit(ngram):
-        score += 1
-    if has_capital(ngram):
-        score += 1
-    if find_ner2(ngram) in when_tag:
+    for word in ngram.split(" "):
+        if word.capitalize():
+            score += 1
+    if find_ner2(ngram) in where_tag:
         score += 1
     return score
 
 def contains_substring(substring, string):
-    search = ".*".join(re.escape(char) for char in substring)
-    return bool(re.search(search, string))
+    search = ".*".join(re.escape(word) for word in substring.split(" ")) + ".*"
+    return bool(re.search(search.lower(), string.lower()))
 
 # loops until exit
 while True:
@@ -267,8 +264,7 @@ while True:
         query_words = ["was","is","are","were"]
         who_query = []
         for words in query_words:
-            if words in ask:
-                who_query.append(text+ " "+words)
+            who_query.append(text+ " "+words)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -284,12 +280,9 @@ while True:
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
-            if i not in ngram_score.keys():
-                ngram_score[i] = score_who(i)
-            else:
-                ngram_score[i] += score_who(i)
-        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        print(sorted_ngram_score)            
+            ngram_score[i] = score_who(i)
+        ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(ngram_score)            
         
     elif q_type == 'what':
         text, label = find_ner(ask)
@@ -297,8 +290,7 @@ while True:
         query_words = ["was","is","are","were"]
         what_query = []
         for words in query_words:
-            if words in ask:
-                what_query.append(text+ " "+words)
+            what_query.append(text+ " "+words)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -314,10 +306,7 @@ while True:
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
-            if i not in ngram_score.keys():
-                ngram_score[i] = score_what(i)
-            else:
-                ngram_score[i] += score_what(i)
+            ngram_score[i] = score_what(i)
         sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         print(sorted_ngram_score)
       
@@ -327,8 +316,7 @@ while True:
         query_words = ["was","is"]
         when_query = []
         for words in query_words:
-            if words in ask:
-                when_query.append(text+ " "+words)
+            when_query.append(text+ " "+words)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -344,21 +332,18 @@ while True:
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
-            if i not in ngram_score.keys():
-                ngram_score[i] = score_when(i)
-            else:
-                ngram_score[i] += score_when(i)
+            ngram_score[i] = score_when(i)
         sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         print(sorted_ngram_score)
         
     elif q_type == 'where':
         text, label = find_ner(ask)
         where_tag = ["GPE","ORG","LOC"]
-        query_words = ["was","is","are","were", "on", "near", "next"]
+        query_words = ["is in", "is on", "is near", "is next to", "is located"]
         where_query = []
         for words in query_words:
-            if words in ask:
-                where_query.append(text+ " "+words)
+            where_query.append(text+ " "+words)
+        print(where_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -374,12 +359,9 @@ while True:
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
-            if i not in ngram_score.keys():
-                ngram_score[i] = score_where(i)
-            else:
-                ngram_score[i] += score_where(i)
-        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        print(sorted_ngram_score)
+            ngram_score[i] = score_where(i)
+        ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(ngram_score)
         
     else:
         print('I can\'t answer that question. Please try another question.')
