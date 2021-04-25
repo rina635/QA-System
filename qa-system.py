@@ -139,29 +139,32 @@ def gen_ngrams(query, text, n):
     return [" ".join(ngram) for ngram in ngrams]
 
 #Function to reformulate when question
-def when_query(input):
-    if input == r"when (was|were)(.*)":
-        re.sub(r"when (was|were)(.*)", r"\2 \1", input) 
-    return input
+def when_response(input):
+    response = input.replace('?', '')
+    if bool(re.match(r"when (was|were)(.*)", input)):
+        response = re.sub(r"when (was|were)(.+)", r"\2 \1 ", input) 
+    return response
 
 #Function to reformulate where question
-def where_query(input):
-    if input == r"where (was|were)(.*)":
-        re.sub(r"where (was|were)(.*)", r"\2 \1", input)
-    elif input == r"where (was|were)(.*) (discovered|found|created|generated)":
-        input = re.sub(r"\2 \1 \3", 4)
-    return input
+def where_response(input):
+    response = input.replace('?', '')
+    if bool(re.match(r"Where (is|was|were)(.+)", input)):
+        response = re.sub(r"Where (is|was|were)(.+)", r"\2 \1 ", response)
+    elif bool(re.match(r"Where (was|were)(.+) (discovered|found|created|generated)", input)):
+        response = re.sub(r"Where (was|were)(.+) (discovered|found|created|generated)", r"\2 \1 \3 ", response)
+    return response
 
 #Function to reformulate what question
-def where_query(input):
-    if input == r"what (is|was|were|does|did|can|could|should)(.*)":
-        input = r"\2 \1" 
-    return input
+def what_response(input):
+    response = input.replace('?', '')
+    if bool(re.match(r"What (is|was|were|does|did|can|could|should)(.+)", input)):
+        response = re.sub(r"What (is|was|were|does|did|can|could|should)(.+)", r"\2 \1 ", response)
+    return response
 
 #Function to reformulate who question
-def who_query(input):
-    input = input.replace('?', '')
-    return re.sub(r'who (is|was|were|can|could|should)(.*)', r'\2 \1', input)
+def who_response(input):
+    response = input.replace('?', '')
+    return re.sub(r'Who (is|was|were|can|could|should)(.+)', r'\2 \1 ', response)
 
 # Function to convert list to string  
 def listToString(list_element): 
@@ -281,17 +284,16 @@ while True:
             for query in who_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
-        print(filtered_sentences)
         ngram_string = " ".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        print(ngrams)
-        print(text, label)
-        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
+        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_who(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        print(ngram_score)            
+        answer = who_response(ask)
+        answer += list(ngram_score.keys())[0]
+        print(answer)
         
     elif q_type == 'what':
         text, label = find_ner(ask)
@@ -307,17 +309,16 @@ while True:
             for query in what_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
-        print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        print(ngrams)
-        print(text, label)
-        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
+        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_what(i)
         sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        print(sorted_ngram_score)
+        answer = what_response(ask)
+        answer += list(ngram_score.keys())[0]
+        print(answer)
       
     elif q_type == 'when':
         text, label = find_ner(ask)
@@ -333,27 +334,24 @@ while True:
             for query in when_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
-        print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        print (keywords)
-        print(ngrams)
-        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
+        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_when(i)
         sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        print(sorted_ngram_score)
+        answer = when_response(ask)
+        answer += list(ngram_score.keys())[0]
+        print(answer)
         
     elif q_type == 'where':
-        print(find_ner2("Paris France"))
         text, label = find_ner(ask)
         where_tag = ["GPE","ORG","LOC"]
         query_words = ["is in", "is on", "is near", "is next to", "is located"]
         where_query = []
         for words in query_words:
             where_query.append(text+ " "+words)
-        print(where_query)
         scraped_data = str(scrape_webpage("https://en.wikipedia.org/w/index.php?search={}".format(text)))
         sentences = sent_tokenize(scraped_data)
         filtered_sentences = []
@@ -361,17 +359,16 @@ while True:
             for query in where_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
-        print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        print(ngrams)
-        print(text, label)
-        url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
+        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_where(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        print(ngram_score)
+        answer = where_response(ask)
+        answer += list(ngram_score.keys())[0]
+        print(answer)
         
     else:
         print('I can\'t answer that question. Please try another question.')
