@@ -132,9 +132,9 @@ def check_q_type(question):
             return 'what'
 
 #Function to generate n-gram 
-def gen_ngrams(text, n):
+def gen_ngrams(query, text, n):
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
-    tokens = [token for token in text.split(" ") if token != "" and not token.islower()]
+    tokens = [token for token in text.split(" ") if token != "" and token not in query.split(" ")]
     ngrams = zip(*[tokens[i:] for i in range(n)])
     return [" ".join(ngram) for ngram in ngrams]
 
@@ -183,12 +183,12 @@ logger.write('Starting New Log.....')
 def score_who(ngram):
     score = 0
     who_tag = ["PERSON"]
-    title = ["president", "ceo", "king", "queen", "prince", "princess"]
+    title = ["president", "governor", "politician", "ceo", "king", "queen", "prince", "princess", "musician", "actor", "actress", "model", "singer", "author", "writer"]
     for word in ngram.split(" "):
         if word.capitalize():
             score += 1
         if word in title:
-            score += 1
+            score += 2
     if find_ner2(ngram) in who_tag:
         score += 1
     return score
@@ -213,12 +213,12 @@ def score_when(ngram):
         if word.capitalize():
             score += 1
         if word.isdigit():
-            score += 1
+            score += 2
     if find_ner2(ngram) in when_tag:
         score += 1
     for month in months:
         if month in ngram.lower():
-            score += 1
+            score += 2
     return score
 
 #Function to give the score of the n-gram in Where question
@@ -229,18 +229,27 @@ def score_where(ngram):
         if word.capitalize():
             score += 1
     if find_ner2(ngram) in where_tag:
-        score += 1
+        score += 2
     return score
 
 def contains_substring(substring, string):
     search = ".*".join(re.escape(word) for word in substring.split(" ")) + ".*"
     return bool(re.search(search.lower(), string.lower()))
 
+def num_substring(substring, string):
+    sub = substring.split(" ")
+    sent = string.split(" ")
+    score = 0
+    for word in sent:
+        if word in sub:
+            score += 1
+    return score
+
 # loops until exit
 while True:
     #Takes user's input and searches wikipedia
     ask = input('What would you like to learn today?\n')
-    #tokenize the question and removve stopwords and use the remaining as keyword to search and filter
+    #tokenize the question and remove stopwords and use the remaining as keyword to search and filter
     question_tokens = nltk.word_tokenize(ask)
     keywords = [token for token in question_tokens if token not in stopwords.words ('english')]
     
@@ -273,8 +282,8 @@ while True:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
         print(filtered_sentences)
-        ngram_string = "".join(filtered_sentences)
-        ngrams = gen_ngrams(ngram_string, 3)
+        ngram_string = " ".join(filtered_sentences)
+        ngrams = gen_ngrams(text, ngram_string, 3)
         print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
@@ -300,7 +309,7 @@ while True:
                     filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
-        ngrams = gen_ngrams(ngram_string, 3)
+        ngrams = gen_ngrams(text, ngram_string, 3)
         print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
@@ -326,7 +335,7 @@ while True:
                     filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
-        ngrams = gen_ngrams(ngram_string, 3)
+        ngrams = gen_ngrams(text, ngram_string, 3)
         print (keywords)
         print(ngrams)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
@@ -337,6 +346,7 @@ while True:
         print(sorted_ngram_score)
         
     elif q_type == 'where':
+        print(find_ner2("Paris France"))
         text, label = find_ner(ask)
         where_tag = ["GPE","ORG","LOC"]
         query_words = ["is in", "is on", "is near", "is next to", "is located"]
@@ -353,7 +363,7 @@ while True:
                     filtered_sentences.append(sentence)
         print(filtered_sentences)
         ngram_string = "".join(filtered_sentences)
-        ngrams = gen_ngrams(ngram_string, 3)
+        ngrams = gen_ngrams(text, ngram_string, 3)
         print(ngrams)
         print(text, label)
         url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
