@@ -4,6 +4,12 @@
 # In[ ]:
 
 
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -33,7 +39,6 @@ e- Unanswered question should be determnined based on the score. If the highest 
 f- If the question couldn't be answered, the system will return "I can\'t answer that question. Please try another question."
 g- if the user typed "exit", the program will terminaten and the log file will close and show the questions and the answers.     
         
-
 Resources used for this assignment come from the materials provided in the AIT 590 course materials.
 - Lecture powerpoints (AIT 590)
 - Stanford University Prof. Dan Jurafsky's Video Lectures (https://www.youtube.com/watch?v=zQ6gzQ5YZ8o)
@@ -248,6 +253,22 @@ def num_substring(substring, string):
             score += 1
     return score
 
+#adopted from https://stackoverflow.com/questions/47333771/how-can-i-merge-overlapping-strings-in-python
+def overlapping(a, b):
+    return max(i for i in range(len(b)+1) if a.endswith(b[:i]))
+
+def ngram_tiling(ngram):
+    if len(ngram) == 0:
+        return "I do not know the answer"
+    else:
+        max_value = max(ngram.values())  # maximum value
+        high_score = [k for k, v in ngram.items() if v == max_value] # getting all keys containing the `maximum`
+        tile_list = high_score[0]
+        for i in high_score[1:]: 
+            lst = overlapping(tile_list, i) 
+            tile_list +=i[lst:]
+        return tile_list
+
 # loops until exit
 while True:
     #Takes user's input and searches wikipedia
@@ -291,6 +312,9 @@ while True:
         for i in ngrams:
             ngram_score[i] = score_who(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        print(ngram_score)
+        tiled_ngram_who = ngram_tiling(ngram_score)
+        print(tiled_ngram_who)
         answer = who_response(ask)
         answer += list(ngram_score.keys())[0]
         print(answer)
@@ -315,7 +339,10 @@ while True:
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_what(i)
-        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        tiled_ngram_what = ngram_tiling(ngram_score)
+        print(tiled_ngram_what)
+
         answer = what_response(ask)
         answer += list(ngram_score.keys())[0]
         print(answer)
@@ -340,7 +367,10 @@ while True:
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_when(i)
-        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        #Calling ngram-tiling function
+        tiled_ngram_when = ngram_tiling(ngram_score)
+        print(tiled_ngram_when)
         answer = when_response(ask)
         answer += list(ngram_score.keys())[0]
         print(answer)
@@ -366,6 +396,8 @@ while True:
         for i in ngrams:
             ngram_score[i] = score_where(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        tiled_ngram_where = ngram_tiling(ngram_score)
+        print(tiled_ngram_where)
         answer = where_response(ask)
         answer += list(ngram_score.keys())[0]
         print(answer)
@@ -379,7 +411,7 @@ logger.close()
         
 
 
-# In[4]:
+# In[ ]:
 
 
 
@@ -388,13 +420,102 @@ logger.close()
 # In[4]:
 
 
+import en_core_web_sm
+import webbrowser
+import sys
+import spacy
+import re
+from pprint import pprint
+import bs4 as bs  # BeautifulSoup
+import urllib.request
+from spacy import displacy
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize, RegexpTokenizer
+from nltk.corpus import stopwords
+import operator
+
+def has_digit(string):
+    return any(i.isdigit() for i in string)
+#Function return True if a string has capital letter 
+def has_capital(string):
+    return any(i.isupper() for i in string)
+
+def find_ner2(input):
+    named_label = ''  
+    # Load English tokenizer, tagger, parser, NER and word vectors
+    nlp = en_core_web_sm.load()  
+    # transform the text to spacy doc format
+    mytext = nlp(input)   
+    for ent in mytext.ents:
+        named_label = ent.label_       
+    return named_label
+
+def score_where(question, ngram):
+    score = 0
+    question_tokens = nltk.word_tokenize(question)
+    keywords = [token for token in question_tokens if token not in stopwords.words ('english')]
+    where_tag = ["GPE","ORG","LOC"]
+    if has_digit(ngram):
+        score += 1
+    if has_capital(ngram):
+        score += 1
+    if find_ner2(ngram) in where_tag:
+        score += 1
+    for token in keywords:
+        if token in ngram:
+            score += 1
+    return score
+s1 = "where was rafeef baamer born"
+s = "rafeef baamer was born in Jeddah, saudi arabia."
+a = score_where(s1,s)
+print(a)
+
+
+# In[14]:
+
+
+import re
+from nltk.tokenize import sent_tokenize, word_tokenize, RegexpTokenizer
+
+#Function to reformulate when question
+def when_query_in(input):
+    return re.sub(r"when (|is|are|was|were)(.*)", r"\2 \1 in", input) 
+def when_query_on(input):
+    return re.sub(r"when (|is|are|was|were)(.*)", r"\2 \1 on", input) 
+def when_query_at(input):
+    return re.sub(r"when (|is|are|was|were)(.*)", r"\2 \1 at", input) 
+
+def who_query(input):
+    return re.sub(r"who (is|are|was|were)(.*)", r"\2 \1", input) 
+
+def where_query_in(input):
+    return re.sub(r"where (is|are|was|were)(.*)", r"\2 \1 in", input) 
+def where_query_on(input):
+    return re.sub(r"where (is|are|was|were)(.*)", r"\2 \1 on", input) 
+def where_query_at(input):
+    return re.sub(r"where (is|are|was|were)(.*)", r"\2 \1 at", input) 
+
+def what_query(input):
+    return re.sub(r"what (is|are|was|were)(.*)", r"\2 \1", input) 
+s = "what was world war"
+print(what_query(s))
 
 
 
-# In[12]:
+# In[3]:
 
 
+def overlapping(a, b):
+    return max(i for i in range(len(b)+1) if a.endswith(b[:i]))
 
+def ngram_tiling(ngram):
+    max_value = max(ngram.values())  # maximum value
+    high_score = [k for k, v in ngram.items() if v == max_value] # getting all keys containing the `maximum`
+    tile_list = high_score[0]
+    for i in high_score[1:]: 
+        lst = overlapping(tile_list, i) 
+        tile_list +=i[lst:]
+    return tile_list
 
 
 # In[ ]:
