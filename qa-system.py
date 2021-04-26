@@ -77,6 +77,7 @@ def scrape_webpage(url):
         formated_text += para.text
     
     formated_text = re.sub(r'(\[.*\])', '', formated_text)
+    #formated_text = re.sub(r'\([^)]*\)', '', formated_text)
     formated_text = formated_text.replace('\n', '')
     return formated_text.encode('ascii', 'ignore')
 
@@ -141,17 +142,19 @@ def gen_ngrams(query, text, n):
 #Function to reformulate when question
 def when_response(input):
     response = input.replace('?', '')
-    if bool(re.match(r"when (was|were)(.*)", input)):
-        response = re.sub(r"when (was|were)(.+)", r"\2 \1 ", input) 
+    if bool(re.match(r"When (was|were|did) (.+) (born|built|found|founded|created|discovered)", input)):
+        response = re.sub(r"When (was|were|did) (.+) (.+)", r"\2 \1 \3 ", response)
+    elif bool(re.match(r"When (was) (.+)", input)):
+        response = re.sub(r"When (was) (.+)", r"\2 \1 ", response)
     return response
 
 #Function to reformulate where question
 def where_response(input):
     response = input.replace('?', '')
     if bool(re.match(r"Where (is|was|were)(.+)", input)):
-        response = re.sub(r"Where (is|was|were)(.+)", r"\2 \1 ", response)
+        response = re.sub(r"Where (is|was|were)(.+)", r"\2 \1 in ", response)
     elif bool(re.match(r"Where (was|were)(.+) (discovered|found|created|generated)", input)):
-        response = re.sub(r"Where (was|were)(.+) (discovered|found|created|generated)", r"\2 \1 \3 ", response)
+        response = re.sub(r"Where (was|were) (.+) (discovered|found|created|generated)", r"\2 \1 \3 ", response)
     return response
 
 #Function to reformulate what question
@@ -185,8 +188,8 @@ logger.write('Starting New Log.....')
 #Function to give the score of the n-gram in Who question
 def score_who(ngram):
     score = 0
-    who_tag = ["PERSON"]
-    title = ["president", "governor", "politician", "ceo", "king", "queen", "prince", "princess", "musician", "actor", "actress", "model", "singer", "author", "writer"]
+    who_tag = ["PERSON", "ORDINAL"]
+    title = ["president", "governor", "politician", "ceo", "king", "queen", "prince", "princess", "musician", "actor", "actress", "model", "singer", "author", "writer", "director", "producer", "bodybuilder", "businessman", "businesswoman", "philanthropist"]
     for word in ngram.split(" "):
         if word.capitalize():
             score += 1
@@ -215,7 +218,7 @@ def score_when(ngram):
     for word in ngram.split(" "):
         if word.capitalize():
             score += 1
-        if word.isdigit():
+        if word.isdigit() and (len(word) == 2 or len(word) == 4):
             score += 2
     if find_ner2(ngram) in when_tag:
         score += 1
@@ -227,26 +230,20 @@ def score_when(ngram):
 #Function to give the score of the n-gram in Where question
 def score_where(ngram):
     score = 0
-    where_tag = ["GPE","ORG","LOC"]
+    where_tag = ["GPE","LOC"]
+    where_keys = ["river", "city"]
     for word in ngram.split(" "):
         if word.capitalize():
             score += 1
+        if word in where_keys:
+            score += 2
     if find_ner2(ngram) in where_tag:
-        score += 2
+        score += 1
     return score
 
 def contains_substring(substring, string):
     search = ".*".join(re.escape(word) for word in substring.split(" ")) + ".*"
     return bool(re.search(search.lower(), string.lower()))
-
-def num_substring(substring, string):
-    sub = substring.split(" ")
-    sent = string.split(" ")
-    score = 0
-    for word in sent:
-        if word in sub:
-            score += 1
-    return score
 
 # loops until exit
 while True:
@@ -340,7 +337,7 @@ while True:
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_when(i)
-        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         answer = when_response(ask)
         answer += list(ngram_score.keys())[0]
         print(answer)
@@ -359,6 +356,7 @@ while True:
             for query in where_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
+                    break;
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
         #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
@@ -368,6 +366,9 @@ while True:
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         answer = where_response(ask)
         answer += list(ngram_score.keys())[0]
+        #print(sentences)
+        #print(find_ner2("the Black Hills"))
+        print(ngram_score)
         print(answer)
         
     else:
