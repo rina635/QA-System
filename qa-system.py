@@ -4,24 +4,36 @@
 # In[ ]:
 
 
-#!/usr/bin/env python
-# coding: utf-8
 
-# In[ ]:
-
-
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 AIT 590 - Assignment 4
 Team 3 - Rafeef Baamer, Ashish Hingle, Rina Lidder, & Andy Nguyen
 Date: 4/21/2021
-Description:
-Types of questions:
-    
+
+Description: This is a QA system by  Rafeef Baamer, Ashish Hingle, Rina Lidder, & Andy Nguyen. 
+It will try to answer questions that start with Who, What, When or Where. Enter "exit" to leave the program.
+            
+Types of questions: Who - When - What- Where
+ 
+Example: 
+    Question: 
+    Answer: 
+
 Libraries used: en_core_web_sm, webbrowser, sys, spacy, pprint, bs4,  urllib.request, nltk, sent_tokenize, word_tokenize, RegexpTokenizer, stopwords
-Additional features (for extra credit):   
-Usage Instructions:     
+Additional features (for extra credit):
+
+
+Usage Instructions: 
+	a) decision-list.py -> Will run this classifier file.
+	b) line-train.xml -> file that contains training data with answers for each sense of the ambiguous word
+	c) line-test.xml -> file that contains test data (no answers present)
+	d) my-decision-list.xml -> Output file that contains the rules developed from the classifier, 
+                                in order of log-likelihood - Measure of how good of a predictor the rule is for WSD.
+	e) my-line-answers.txt -> file containing generated answers and sense for test data based on the training data
+ 
+
+
 Algorithm defined in program:
 a- Get the question from the user 
 b- Check if the question is valid or not. Valid question starts with (who, what, when, or where) and more than three words
@@ -34,11 +46,14 @@ d- For each question type:
     4- 3-gram is generated from the filtered sentences.
     5- The n-gram is scored based on criteria givin for each question type. 
     6- The scored n-grams are sorted to be used for n-gram tiling.
-    7- The full answer will be returned based on the tiling result. 
+    7- The full answer will be returned based on the tiling result with a word cloud image for the common words in the Wikipedia page. 
 e- Unanswered question should be determnined based on the score. If the highest score is 1 means the answer cannot be found. 
 f- If the question couldn't be answered, the system will return "I can\'t answer that question. Please try another question."
 g- if the user typed "exit", the program will terminaten and the log file will close and show the questions and the answers.     
-        
+
+Function for Extra Credit: 
+We created a function that show word cloud image for the words in the Wikipedia page that is related to the question. 
+
 Resources used for this assignment come from the materials provided in the AIT 590 course materials.
 - Lecture powerpoints (AIT 590)
 - Stanford University Prof. Dan Jurafsky's Video Lectures (https://www.youtube.com/watch?v=zQ6gzQ5YZ8o)
@@ -46,8 +61,9 @@ Resources used for this assignment come from the materials provided in the AIT 5
 - w3schools Python Reference (https://www.w3schools.com/python/)
 - regular expressions 101 (https://regex101.com/)
 - https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
+- https://stackoverflow.com/questions/16645799/how-to-create-a-word-cloud-from-a-corpus-in-python
 """
-
+#Libraries:
 import en_core_web_sm
 import webbrowser
 import sys
@@ -61,6 +77,22 @@ import nltk
 from nltk.tokenize import sent_tokenize, word_tokenize, RegexpTokenizer
 from nltk.corpus import stopwords
 import operator
+import en_core_web_sm
+import webbrowser
+import sys
+import spacy
+import re
+from pprint import pprint
+import bs4 as bs  # BeautifulSoup
+import urllib.request
+from spacy import displacy
+import nltk
+from nltk.tokenize import sent_tokenize, word_tokenize, RegexpTokenizer
+from nltk.corpus import stopwords
+import operator
+from wordcloud import WordCloud, STOPWORDS
+import matplotlib.pyplot as plt
+
 
 #Command line arguments to run file and store user's questions into log file.
 #run_file = sys.argv[1]
@@ -175,12 +207,6 @@ def who_response(input):
     response = input.replace('?', '')
     return re.sub(r'Who (is|was|were|can|could|should)(.+)', r'\2 \1 ', response)
 
-# Function to convert list to string  
-def listToString(list_element): 
-    # initialize an empty string
-    text= " " 
-    # return string  
-    return (text.join(list_element)) 
 
 #https://stackoverflow.com/questions/58151963/how-can-i-take-user-input-and-search-it-in-python
 
@@ -247,19 +273,21 @@ def score_where(ngram):
         score += 1
     return score
 
+#Function to check if a string contains a substring 
 def contains_substring(substring, string):
     search = ".*".join(re.escape(word) for word in substring.split(" ")) + ".*"
     return bool(re.search(search.lower(), string.lower()))
 
+# Function to check the overlapping among the n-gram list
 #adopted from https://stackoverflow.com/questions/47333771/how-can-i-merge-overlapping-strings-in-python
 def overlapping(a, b):
     return max(i for i in range(len(b)+1) if a.endswith(b[:i]))
 
+#Function to remove the overlapped substring in the n-gram list elements and return just the unique string. 
 def ngram_tiling(ngram):
     if len(ngram) == 0:
         return "I do not know the answer"
     else:
-        #max_value = max(ngram.values())  # maximum value
         high_score = [k for k, v in ngram.items() if v >= min_score] # getting all keys containing the `maximum`
         tile_list = high_score[0]
         for i in high_score[1:]: 
@@ -268,6 +296,22 @@ def ngram_tiling(ngram):
                 tile_list +=i[lst:]
         return tile_list
 
+#Word Cloud function for extra credit: it show the word cloud for the n-gram generated from the Wikipedia page.
+#adopted from https://stackoverflow.com/questions/16645799/how-to-create-a-word-cloud-from-a-corpus-in-python
+def create_word_cloud(input):
+    wordcloud = WordCloud(
+        background_color='white',
+        stopwords=stopwords,
+        max_words=1000,
+        max_font_size=40, 
+        scale=3,
+        #random_state=1
+    ).generate(str(input))
+    fig = plt.figure(1, figsize=(12, 12))
+    plt.axis('off')
+    plt.imshow(wordcloud)
+    plt.show()
+    
 # loops until exit
 while True:
     #Takes user's input and searches wikipedia
@@ -305,7 +349,10 @@ while True:
             for query in who_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
+        stopwords = set(STOPWORDS)
         ngram_string = " ".join(filtered_sentences)
+        ngram_cloud = ngram_string.lower()
+        create_word_cloud(ngram_cloud)
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -336,7 +383,10 @@ while True:
             for query in what_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
-        ngram_string = "".join(filtered_sentences)
+        stopwords = set(STOPWORDS)
+        ngram_string = " ".join(filtered_sentences)
+        ngram_cloud = ngram_string.lower()
+        create_word_cloud(ngram_cloud)        
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -366,7 +416,10 @@ while True:
             for query in when_query:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
-        ngram_string = "".join(filtered_sentences)
+        stopwords = set(STOPWORDS)
+        ngram_string = " ".join(filtered_sentences)
+        ngram_cloud = ngram_string.lower()
+        create_word_cloud(ngram_cloud)
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -398,7 +451,10 @@ while True:
                 if contains_substring(query, sentence):
                     filtered_sentences.append(sentence)
                     break;
-        ngram_string = "".join(filtered_sentences)
+        stopwords = set(STOPWORDS)
+        ngram_string = " ".join(filtered_sentences)
+        ngram_cloud = ngram_string.lower()
+        create_word_cloud(ngram_cloud)
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -422,3 +478,40 @@ while True:
 
 # close the logging file after everything has been written        
 logger.close()
+
+
+# In[ ]:
+
+
+
+
+
+# In[4]:
+
+
+
+
+
+# In[14]:
+
+
+
+
+
+# In[3]:
+
+
+
+
+
+# In[5]:
+
+
+
+
+
+# In[ ]:
+
+
+
+
