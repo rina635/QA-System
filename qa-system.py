@@ -4,6 +4,12 @@
 # In[ ]:
 
 
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -33,7 +39,6 @@ e- Unanswered question should be determnined based on the score. If the highest 
 f- If the question couldn't be answered, the system will return "I can\'t answer that question. Please try another question."
 g- if the user typed "exit", the program will terminaten and the log file will close and show the questions and the answers.     
         
-
 Resources used for this assignment come from the materials provided in the AIT 590 course materials.
 - Lecture powerpoints (AIT 590)
 - Stanford University Prof. Dan Jurafsky's Video Lectures (https://www.youtube.com/watch?v=zQ6gzQ5YZ8o)
@@ -62,7 +67,8 @@ import operator
 #log_output = sys.argv[2]
 
 wiki = "https://en.wikipedia.org/w/index.php?search={}"
-nlp = en_core_web_sm.load() 
+nlp = en_core_web_sm.load()
+min_score = 4
 
 #Retrieve webpage text from Wikipedia site the user's answer leads tos
 def scrape_webpage(url):
@@ -135,7 +141,7 @@ def check_q_type(question):
 #Function to generate n-gram 
 def gen_ngrams(query, text, n):
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
-    tokens = [token for token in text.split(" ") if token != "" and token not in query.split(" ")]
+    tokens = [token for token in text.split(" ") if token != "" and token not in query.split(" ") and len(token) > 1]
     ngrams = zip(*[tokens[i:] for i in range(n)])
     return [" ".join(ngram) for ngram in ngrams]
 
@@ -188,7 +194,7 @@ logger.write('Starting New Log.....')
 #Function to give the score of the n-gram in Who question
 def score_who(ngram):
     score = 0
-    who_tag = ["PERSON", "ORDINAL"]
+    who_tag = ["PERSON", "ORDINAL", "GPE"]
     title = ["president", "governor", "politician", "ceo", "king", "queen", "prince", "princess", "musician", "actor", "actress", "model", "singer", "author", "writer", "director", "producer", "bodybuilder", "businessman", "businesswoman", "philanthropist"]
     for word in ngram.split(" "):
         if word.capitalize():
@@ -196,7 +202,7 @@ def score_who(ngram):
         if word in title:
             score += 2
     if find_ner2(ngram) in who_tag:
-        score += 1
+        score += 2
     return score
 
 #Function to give the score of the n-gram in What question
@@ -245,6 +251,23 @@ def contains_substring(substring, string):
     search = ".*".join(re.escape(word) for word in substring.split(" ")) + ".*"
     return bool(re.search(search.lower(), string.lower()))
 
+#adopted from https://stackoverflow.com/questions/47333771/how-can-i-merge-overlapping-strings-in-python
+def overlapping(a, b):
+    return max(i for i in range(len(b)+1) if a.endswith(b[:i]))
+
+def ngram_tiling(ngram):
+    if len(ngram) == 0:
+        return "I do not know the answer"
+    else:
+        #max_value = max(ngram.values())  # maximum value
+        high_score = [k for k, v in ngram.items() if v >= min_score] # getting all keys containing the `maximum`
+        tile_list = high_score[0]
+        for i in high_score[1:]: 
+            if overlapping(tile_list, i) > 0:
+                lst = overlapping(tile_list, i)
+                tile_list +=i[lst:]
+        return tile_list
+
 # loops until exit
 while True:
     #Takes user's input and searches wikipedia
@@ -257,7 +280,8 @@ while True:
     logger.write('\n' + ask)
     
     if (ask == 'exit'):
-        print('we will now exit')
+        print('Thank you for using the QA System!')
+        logger.write('\n Thank you for using the QA System!')
         break
     
     #check the type of question   
@@ -283,14 +307,20 @@ while True:
                     filtered_sentences.append(sentence)
         ngram_string = " ".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_who(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        answer = who_response(ask)
-        answer += list(ngram_score.keys())[0]
-        print(answer)
+        tiled_ngram_who = ngram_tiling(ngram_score)
+        #print(ngram_score)
+        if max(ngram_score.values()) < min_score:
+            print("I do not know the answer.")
+            logger.write("\n I do not know the answer.")
+        else:
+            answer = who_response(ask)
+            answer += tiled_ngram_who
+            print(answer)
+            logger.write("\n" + answer)
         
     elif q_type == 'what':
         text, label = find_ner(ask)
@@ -308,14 +338,19 @@ while True:
                     filtered_sentences.append(sentence)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_what(i)
-        sorted_ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        answer = what_response(ask)
-        answer += list(ngram_score.keys())[0]
-        print(answer)
+        ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
+        tiled_ngram_what = ngram_tiling(ngram_score)
+        if max(ngram_score.values()) < min_score:
+            print("I do not know the answer")
+            logger.write("\n I do not know the answer")
+        else:
+            answer = what_response(ask)
+            answer += list(ngram_score.keys())[0]
+            print(answer)
+            logger.write("\n" + answer)
       
     elif q_type == 'when':
         text, label = find_ner(ask)
@@ -333,14 +368,20 @@ while True:
                     filtered_sentences.append(sentence)
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_when(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        answer = when_response(ask)
-        answer += list(ngram_score.keys())[0]
-        print(answer)
+        #Calling ngram-tiling function
+        tiled_ngram_when = ngram_tiling(ngram_score)
+        if max(ngram_score.values()) < min_score:
+            print("I do not know the answer")
+            logger.write("\n I do not know the answer")
+        else:
+            answer = when_response(ask)
+            answer += tiled_ngram_when
+            print(answer)
+            logger.write("\n" + answer)
         
     elif q_type == 'where':
         text, label = find_ner(ask)
@@ -359,47 +400,25 @@ while True:
                     break;
         ngram_string = "".join(filtered_sentences)
         ngrams = gen_ngrams(text, ngram_string, 3)
-        #url = webbrowser.open("https://en.wikipedia.org/w/index.php?search={}".format(text))
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_where(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
-        answer = where_response(ask)
-        answer += list(ngram_score.keys())[0]
-        #print(sentences)
-        #print(find_ner2("the Black Hills"))
-        print(ngram_score)
-        print(answer)
+        #print(ngram_score)
+        tiled_ngram_where = ngram_tiling(ngram_score)
+        if max(ngram_score.values()) < min_score:
+            print("I do not know the answer")
+            logger.write("\n I do not know the answer")
+        else:
+            answer = where_response(ask)
+            answer += tiled_ngram_where
+            print(answer)
+            logger.write("\n" + answer)
         
     else:
         print('I can\'t answer that question. Please try another question.')
+        logger.write('\n I can\'t answer that question. Please try another question.')
     
 
 # close the logging file after everything has been written        
 logger.close()
-        
-
-
-# In[4]:
-
-
-
-
-
-# In[4]:
-
-
-
-
-
-# In[12]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
