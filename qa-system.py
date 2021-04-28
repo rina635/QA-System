@@ -100,7 +100,7 @@ import matplotlib.pyplot as plt
 
 wiki = "https://en.wikipedia.org/w/index.php?search={}"
 nlp = en_core_web_sm.load()
-min_score = 4
+min_score = 5
 
 #Retrieve webpage text from Wikipedia site the user's answer leads tos
 def scrape_webpage(url):
@@ -221,7 +221,7 @@ logger.write('Starting New Log.....')
 def score_who(ngram):
     score = 0
     who_tag = ["PERSON", "ORDINAL", "GPE"]
-    title = ["president", "governor", "politician", "ceo", "king", "queen", "prince", "princess", "musician", "actor", "actress", "model", "singer", "author", "writer", "director", "producer", "bodybuilder", "businessman", "businesswoman", "philanthropist"]
+    title = ["president", "governor", "politician", "ceo", "chief executive officer", "cto", "chief technology officer", "king", "queen", "prince", "princess", "musician", "actor", "actress", "model", "singer", "author", "writer", "director", "producer", "bodybuilder", "businessman", "businesswoman", "philanthropist", "developer", "magnate", "investor", "designer", "propietor"]
     for word in ngram.split(" "):
         if word.capitalize():
             score += 1
@@ -239,7 +239,7 @@ def score_what(ngram):
         if word.capitalize():
             score += 1
     if find_ner2(ngram) in what_tag:
-        score += 1
+        score += 2
     return score
 
 #Function to give the score of the n-gram in When question
@@ -270,7 +270,7 @@ def score_where(ngram):
         if word in where_keys:
             score += 2
     if find_ner2(ngram) in where_tag:
-        score += 1
+        score += 2
     return score
 
 #Function to check if a string contains a substring 
@@ -285,10 +285,11 @@ def overlapping(a, b):
 
 #Function to remove the overlapped substring in the n-gram list elements and return just the unique string. 
 def ngram_tiling(ngram):
-    if len(ngram) == 0:
+    high_score = [k for k, v in ngram.items() if v >= min_score]
+    if len(high_score) == 0:
         return "I do not know the answer"
     else:
-        high_score = [k for k, v in ngram.items() if v >= min_score] # getting all keys containing the `maximum`
+        #high_score = [k for k, v in ngram.items() if v >= min_score] # getting all keys containing the `maximum`
         tile_list = high_score[0]
         for i in high_score[1:]: 
             if overlapping(tile_list, i) > 0:
@@ -318,7 +319,7 @@ while True:
     ask = input('What would you like to learn today?\n')
     #tokenize the question and remove stopwords and use the remaining as keyword to search and filter
     question_tokens = nltk.word_tokenize(ask)
-    keywords = [token for token in question_tokens if token not in stopwords.words ('english')]
+    #keywords = [token for token in question_tokens if token not in stopwords.words ('english')]
     
     # add to log file
     logger.write('\n' + ask)
@@ -352,7 +353,8 @@ while True:
         stopwords = set(STOPWORDS)
         ngram_string = " ".join(filtered_sentences)
         ngram_cloud = ngram_string.lower()
-        create_word_cloud(ngram_cloud)
+        if len(ngram_cloud) > 0:
+            create_word_cloud(ngram_cloud)
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -360,14 +362,18 @@ while True:
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         tiled_ngram_who = ngram_tiling(ngram_score)
         #print(ngram_score)
-        if max(ngram_score.values()) < min_score:
+        if len(ngram_score) > 0:
+            if max(ngram_score.values()) < min_score:
+                print("I do not know the answer.")
+                logger.write("\n I do not know the answer.")
+            else:
+                answer = who_response(ask)
+                answer += tiled_ngram_who
+                print(answer)
+                logger.write("\n" + answer)
+        else:
             print("I do not know the answer.")
             logger.write("\n I do not know the answer.")
-        else:
-            answer = who_response(ask)
-            answer += tiled_ngram_who
-            print(answer)
-            logger.write("\n" + answer)
         
     elif q_type == 'what':
         text, label = find_ner(ask)
@@ -386,21 +392,26 @@ while True:
         stopwords = set(STOPWORDS)
         ngram_string = " ".join(filtered_sentences)
         ngram_cloud = ngram_string.lower()
-        create_word_cloud(ngram_cloud)        
+        if len(ngram_cloud) > 0:
+            create_word_cloud(ngram_cloud)        
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
             ngram_score[i] = score_what(i)
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         tiled_ngram_what = ngram_tiling(ngram_score)
-        if max(ngram_score.values()) < min_score:
+        if len(ngram_score) > 0:
+            if max(ngram_score.values()) < min_score:
+                print("I do not know the answer")
+                logger.write("\n I do not know the answer")
+            else:
+                answer = what_response(ask)
+                answer += list(ngram_score.keys())[0]
+                print(answer)
+                logger.write("\n" + answer)
+        else:
             print("I do not know the answer")
             logger.write("\n I do not know the answer")
-        else:
-            answer = what_response(ask)
-            answer += list(ngram_score.keys())[0]
-            print(answer)
-            logger.write("\n" + answer)
       
     elif q_type == 'when':
         text, label = find_ner(ask)
@@ -419,7 +430,8 @@ while True:
         stopwords = set(STOPWORDS)
         ngram_string = " ".join(filtered_sentences)
         ngram_cloud = ngram_string.lower()
-        create_word_cloud(ngram_cloud)
+        if len(ngram_cloud) > 0:
+            create_word_cloud(ngram_cloud)
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -427,14 +439,18 @@ while True:
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         #Calling ngram-tiling function
         tiled_ngram_when = ngram_tiling(ngram_score)
-        if max(ngram_score.values()) < min_score:
+        if len(ngram_score) > 0:
+            if max(ngram_score.values()) < min_score:
+                print("I do not know the answer")
+                logger.write("\n I do not know the answer")
+            else:
+                answer = when_response(ask)
+                answer += tiled_ngram_when
+                print(answer)
+                logger.write("\n" + answer)
+        else:
             print("I do not know the answer")
             logger.write("\n I do not know the answer")
-        else:
-            answer = when_response(ask)
-            answer += tiled_ngram_when
-            print(answer)
-            logger.write("\n" + answer)
         
     elif q_type == 'where':
         text, label = find_ner(ask)
@@ -454,7 +470,8 @@ while True:
         stopwords = set(STOPWORDS)
         ngram_string = " ".join(filtered_sentences)
         ngram_cloud = ngram_string.lower()
-        create_word_cloud(ngram_cloud)
+        if len(ngram_cloud) > 0:
+            create_word_cloud(ngram_cloud)
         ngrams = gen_ngrams(text, ngram_string, 3)
         ngram_score = {}
         for i in ngrams:
@@ -462,15 +479,18 @@ while True:
         ngram_score = dict( sorted(ngram_score.items(), key=operator.itemgetter(1),reverse=True))
         #print(ngram_score)
         tiled_ngram_where = ngram_tiling(ngram_score)
-        if max(ngram_score.values()) < min_score:
+        if len(ngram_score) > 0:
+            if max(ngram_score.values()) < min_score:
+                print("I do not know the answer")
+                logger.write("\n I do not know the answer")
+            else:
+                answer = where_response(ask)
+                answer += tiled_ngram_where
+                print(answer)
+                logger.write("\n" + answer)
+        else:
             print("I do not know the answer")
             logger.write("\n I do not know the answer")
-        else:
-            answer = where_response(ask)
-            answer += tiled_ngram_where
-            print(answer)
-            logger.write("\n" + answer)
-        
     else:
         print('I can\'t answer that question. Please try another question.')
         logger.write('\n I can\'t answer that question. Please try another question.')
