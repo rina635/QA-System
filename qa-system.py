@@ -17,22 +17,13 @@ It will try to answer questions that start with Who, What, When or Where. Enter 
 Types of questions: Who - When - What- Where
  
 Example: 
-    Question: 
-    Answer: 
+    Question: Who is George Washington?
+    Answer: George Washington is the first president of the United States
+
+
+How to run: python qa-system.py
 
 Libraries used: en_core_web_sm, webbrowser, sys, spacy, pprint, bs4,  urllib.request, nltk, sent_tokenize, word_tokenize, RegexpTokenizer, stopwords
-Additional features (for extra credit):
-
-
-Usage Instructions: 
-	a) decision-list.py -> Will run this classifier file.
-	b) line-train.xml -> file that contains training data with answers for each sense of the ambiguous word
-	c) line-test.xml -> file that contains test data (no answers present)
-	d) my-decision-list.xml -> Output file that contains the rules developed from the classifier, 
-                                in order of log-likelihood - Measure of how good of a predictor the rule is for WSD.
-	e) my-line-answers.txt -> file containing generated answers and sense for test data based on the training data
- 
-
 
 Algorithm defined in program:
 a- Get the question from the user 
