@@ -1,80 +1,80 @@
 Question: Who is George Washington?
 Correct Answer: George Washing is the first President of the United States
-System Answer: George Washington is the first president of the United States from
+System Answer: George Washington is the first president of the United States from (correct)
 
 Question: Who is Elvis Presley?
 Correct Answer: Elvis Presley is an singer, musician, and actor
-System Answer: Elvis Presley is American singer musician and actor Aaron January
+System Answer: Elvis Presley is American singer musician and actor Aaron January (correct)
 
 Question: Who is Abraham Lincoln?
 Correct Answer: Abraham Lincoln is the 16th President of the United States
-System Answer: Abraham Lincoln is the 16th president of the United States fromother Nancy remainsettled in Macon County first romantic interesto New Salem is remembered
+System Answer: Abraham Lincoln is the 16th president of the United States fromother Nancy remainsettled in Macon County first romantic interesto New Salem is remembered (correct)
 
 Question: Who is Bill Gates?
 Correct Answer: Bill gates is an author and philanthropist.
-System Answer: Bill Gates is born in Seattle Washington on
+System Answer: Bill Gates is born in Seattle Washington on (incorrect)
 
 Question: Who is Steve Jobs?
 Correct Answer: Steve Jobs is a business magnate, industrial designer, investor, and media propietor.
-System Answer: Steve Jobs is magnate industrial designer investor and mediand Joanne Schieble and Clara ne Hagopiand Jandali spenthe Reed campusell it Wozniak was at first skeptical ofounder Wozniak all offered
+System Answer: Steve Jobs is magnate industrial designer investor and mediand Joanne Schieble and Clara ne Hagopiand Jandali spenthe Reed campusell it Wozniak was at first skeptical ofounder Wozniak all offered (correct)
 
 Question: What is Apple Inc.?
 Correct Answer: Apple is a technology company.
-System Answer: Apple Inc. is 37 3349N 122
+System Answer: Apple Inc. is 37 3349N 122 (incorrect)
 
 Question: What is Microsoft?
 Correct Answer: Microsoft is a technolgoy company.
-System Answer: Microsoft is is an American
+System Answer: Microsoft is is an American (incorrect)
 
 Question: What is the Taj Mahal?
 Correct Answer: The Taj Mahal is a marble mausoleum.
-System Answer: the Taj Mahal is Yamuna in Indian
+System Answer: the Taj Mahal is Yamuna in Indian (incorrect)
 
 Question: What is the Mona Lisa?
 Correct Answer: The Mona Lisa is a half-length portrait painting.
-System Answer: the Mona Lisa is mon lis Italian
+System Answer: the Mona Lisa is mon lis Italian (incorrect)
 
 Question: What is the Empire State Building?
 Correct Answer: The Empire State Building is a 102-story Art Deco skyscraper.
-System Answer: the Empire State Building is The is 102
+System Answer: the Empire State Building is The is 102 (incorrect)
 
 Question: When was George Washington born?
 Correct Answer: George Washington was born on February 22, 1732
-System Answer: George Washington was born February 22 1732 December 14 1799 was an
+System Answer: George Washington was born February 22 1732 December 14 1799 was an (correct)
 
 Question: When was the American Civil War?
 Correct Answer: The American Civil War was from 1861 to 1865
-System Answer: the American Civil War was 1861 to 1865 fought between
+System Answer: the American Civil War was 1861 to 1865 fought between (correct)
 
 Question: When was World War I?
 Correct Answer: World War I was from July 28, 1914 to November 11, 1918
-System Answer: World War I was 20 September 1914 by German
+System Answer: World War I was 20 September 1914 by German (incorrect)
 
 Question: When was World War II?
 Correct Answer: World War II was from 1939 to 1945.
-System Answer: World War II was 1939 to 1945 WarII was
+System Answer: World War II was 1939 to 1945 WarII was (correct)
 
 Question: When was the Battle of Gettysburg?
 Correct Answer: The Battle of Gettysburg was from July 1 to July 3, 1863.
-System Answer: the Battle of Gettysburg was April 30 May 1863 Robert Lee
+System Answer: the Battle of Gettysburg was April 30 May 1863 Robert Lee (correct)
 
 Question: Where is the Taj Mahal?
 Correct Answer: The Taj Mahal is on the southern bank of the river Yamuna in the Indian city of Agra.
-System Answer: the Taj Mahal is in bank of river Yamuna in Indian city of Agra
+System Answer: the Taj Mahal is in bank of river Yamuna in Indian city of Agra (correct)
 
-Question: Where is the Eiffel Tower?
-Correct Answer: The Eiffel Tower is in Paris, France.
-System Answer: I do not know the answer
+Question: Where is the Panama Canal?
+Correct Answer: The Panama Canal is in Panama.
+System Answer: the Panama Canal is in Panam is and Pacific outletsince United States invasion (correct)
 
 Question: Where is the Statue of Liberty?
 Correct Answer: The Statue of Liberty is on Liberty Island in New York Harbor within New York City.
-System Answer: I do not know the answer
+System Answer: I do not know the answer (incorrect)
 
 
 Question: Where is the Great Wall of China?
 Correct Answer: The Great Wall of China is in the northern borders of anicent Chinese states and Imperial China?
-System Answer: the Great Wall of China is in stretch from Liaodong in east to Lop Lake inorth Warring Statestated At Earth orbit
+System Answer: the Great Wall of China is in stretch from Liaodong in east to Lop Lake inorth Warring Statestated At Earth orbit (incorrect)
 
 Question: Where is the Empire State Building?
 Correct Answer: The Empire State Building is in Midtown manhattan in new York City, United States.
-System Answer: the Empire State Building is in were designated city landmarks by
+System Answer: the Empire State Building is in were designated city landmarks by (incorrect)
